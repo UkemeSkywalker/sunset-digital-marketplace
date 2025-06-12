@@ -1,0 +1,202 @@
+service: sunset-digital-marketplace
+
+frameworkVersion: '4'
+
+plugins:
+  - serverless-offline
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1
+  environment:
+    PRODUCTS_TABLE: ${self:service}-products-${sls:stage}
+    USERS_TABLE: ${self:service}-users-${sls:stage}
+    ORDERS_TABLE: ${self:service}-orders-${sls:stage}
+    PRODUCT_BUCKET: ${self:service}-products-${sls:stage}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource: 
+        - !GetAtt ProductsTable.Arn
+        - !GetAtt UsersTable.Arn
+        - !GetAtt OrdersTable.Arn
+    - Effect: Allow
+      Action:
+        - s3:PutObject
+        - s3:GetObject
+        - s3:DeleteObject
+      Resource: !Join ['', [!GetAtt ProductBucket.Arn, '/*']]
+
+functions:
+  # Authentication functions
+  createUser:
+    handler: src/auth/createUser.handler
+    events:
+      - http:
+          path: /users
+          method: post
+          cors: true
+  
+  # Product functions
+  listProducts:
+    handler: src/products/listProducts.handler
+    events:
+      - http:
+          path: /products
+          method: get
+          cors: true
+  
+  getProduct:
+    handler: src/products/getProduct.handler
+    events:
+      - http:
+          path: /products/{id}
+          method: get
+          cors: true
+  
+  createProduct:
+    handler: src/products/createProduct.handler
+    events:
+      - http:
+          path: /products
+          method: post
+          cors: true
+          authorizer: aws_iam
+  
+  # Order functions
+  createOrder:
+    handler: src/orders/createOrder.handler
+    events:
+      - http:
+          path: /orders
+          method: post
+          cors: true
+          authorizer: aws_iam
+  
+  getOrders:
+    handler: src/orders/getOrders.handler
+    events:
+      - http:
+          path: /orders
+          method: get
+          cors: true
+          authorizer: aws_iam
+
+resources:
+  Resources:
+    # DynamoDB Tables
+    ProductsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.PRODUCTS_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+    
+    UsersTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.USERS_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+    
+    OrdersTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.ORDERS_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+          - AttributeName: userId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: userIdIndex
+            KeySchema:
+              - AttributeName: userId
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+    
+    # S3 Bucket for product files
+    ProductBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:provider.environment.PRODUCT_BUCKET}
+        CorsConfiguration:
+          CorsRules:
+            - AllowedHeaders:
+                - '*'
+              AllowedMethods:
+                - GET
+                - PUT
+                - POST
+                - DELETE
+              AllowedOrigins:
+                - '*'
+    
+    # Cognito User Pool
+    UserPool:
+      Type: AWS::Cognito::UserPool
+      Properties:
+        UserPoolName: ${self:service}-user-pool-${sls:stage}
+        AutoVerifiedAttributes:
+          - email
+        UsernameAttributes:
+          - email
+    
+    UserPoolClient:
+      Type: AWS::Cognito::UserPoolClient
+      Properties:
+        ClientName: ${self:service}-user-pool-client-${sls:stage}
+        UserPoolId: !Ref UserPool
+        ExplicitAuthFlows:
+          - ALLOW_USER_SRP_AUTH
+          - ALLOW_REFRESH_TOKEN_AUTH
+        GenerateSecret: false
+
+    # User Pool Groups for Buyers and Sellers
+    BuyersGroup:
+      Type: AWS::Cognito::UserPoolGroup
+      Properties:
+        GroupName: buyers
+        UserPoolId: !Ref UserPool
+    
+    SellersGroup:
+      Type: AWS::Cognito::UserPoolGroup
+      Properties:
+        GroupName: sellers
+        UserPoolId: !Ref UserPool
+
+  Outputs:
+    ProductsTableName:
+      Value: !Ref ProductsTable
+    UsersTableName:
+      Value: !Ref UsersTable
+    OrdersTableName:
+      Value: !Ref OrdersTable
+    ProductBucketName:
+      Value: !Ref ProductBucket
+    UserPoolId:
+      Value: !Ref UserPool
+    UserPoolClientId:
+      Value: !Ref UserPoolClient
