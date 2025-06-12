@@ -1,0 +1,511 @@
+{
+  "/Users/ukeme/sunset-digital-marketplace/backend/serverless.yml": {
+    "versionFramework": "4.17.0",
+    "servicePath": "/Users/ukeme/sunset-digital-marketplace/backend/serverless.yml",
+    "serviceConfigFileName": "serverless.yml",
+    "service": {
+      "service": "sunset-digital-marketplace",
+      "frameworkVersion": "4",
+      "plugins": [
+        "serverless-offline"
+      ],
+      "provider": {
+        "name": "aws",
+        "runtime": "nodejs18.x",
+        "region": "us-east-1",
+        "environment": {
+          "PRODUCTS_TABLE": "sunset-digital-marketplace-products-dev",
+          "USERS_TABLE": "sunset-digital-marketplace-users-dev",
+          "ORDERS_TABLE": "sunset-digital-marketplace-orders-dev",
+          "PRODUCT_BUCKET": "sunset-digital-marketplace-products-dev"
+        },
+        "iamRoleStatements": [
+          {
+            "Effect": "Allow",
+            "Action": [
+              "dynamodb:Query",
+              "dynamodb:Scan",
+              "dynamodb:GetItem",
+              "dynamodb:PutItem",
+              "dynamodb:UpdateItem",
+              "dynamodb:DeleteItem"
+            ],
+            "Resource": [
+              {
+                "Fn::GetAtt": [
+                  "ProductsTable",
+                  "Arn"
+                ]
+              },
+              {
+                "Fn::GetAtt": [
+                  "UsersTable",
+                  "Arn"
+                ]
+              },
+              {
+                "Fn::GetAtt": [
+                  "OrdersTable",
+                  "Arn"
+                ]
+              }
+            ]
+          },
+          {
+            "Effect": "Allow",
+            "Action": [
+              "s3:PutObject",
+              "s3:GetObject",
+              "s3:DeleteObject"
+            ],
+            "Resource": {
+              "Fn::Join": [
+                "",
+                [
+                  {
+                    "Fn::GetAtt": [
+                      "ProductBucket",
+                      "Arn"
+                    ]
+                  },
+                  "/*"
+                ]
+              ]
+            }
+          }
+        ],
+        "stage": "dev",
+        "versionFunctions": true
+      },
+      "functions": {
+        "createUser": {
+          "handler": "src/auth/createUser.handler",
+          "events": [
+            {
+              "http": {
+                "path": "/users",
+                "method": "post",
+                "cors": true
+              }
+            }
+          ],
+          "name": "sunset-digital-marketplace-dev-createUser"
+        },
+        "listProducts": {
+          "handler": "src/products/listProducts.handler",
+          "events": [
+            {
+              "http": {
+                "path": "/products",
+                "method": "get",
+                "cors": true
+              }
+            }
+          ],
+          "name": "sunset-digital-marketplace-dev-listProducts"
+        },
+        "getProduct": {
+          "handler": "src/products/getProduct.handler",
+          "events": [
+            {
+              "http": {
+                "path": "/products/{id}",
+                "method": "get",
+                "cors": true
+              }
+            }
+          ],
+          "name": "sunset-digital-marketplace-dev-getProduct"
+        },
+        "createProduct": {
+          "handler": "src/products/createProduct.handler",
+          "events": [
+            {
+              "http": {
+                "path": "/products",
+                "method": "post",
+                "cors": true,
+                "authorizer": "aws_iam"
+              }
+            }
+          ],
+          "name": "sunset-digital-marketplace-dev-createProduct"
+        },
+        "createOrder": {
+          "handler": "src/orders/createOrder.handler",
+          "events": [
+            {
+              "http": {
+                "path": "/orders",
+                "method": "post",
+                "cors": true,
+                "authorizer": "aws_iam"
+              }
+            }
+          ],
+          "name": "sunset-digital-marketplace-dev-createOrder"
+        },
+        "getOrders": {
+          "handler": "src/orders/getOrders.handler",
+          "events": [
+            {
+              "http": {
+                "path": "/orders",
+                "method": "get",
+                "cors": true,
+                "authorizer": "aws_iam"
+              }
+            }
+          ],
+          "name": "sunset-digital-marketplace-dev-getOrders"
+        }
+      },
+      "resources": {
+        "Resources": {
+          "ProductsTable": {
+            "Type": "AWS::DynamoDB::Table",
+            "Properties": {
+              "TableName": "sunset-digital-marketplace-products-dev",
+              "BillingMode": "PAY_PER_REQUEST",
+              "AttributeDefinitions": [
+                {
+                  "AttributeName": "id",
+                  "AttributeType": "S"
+                }
+              ],
+              "KeySchema": [
+                {
+                  "AttributeName": "id",
+                  "KeyType": "HASH"
+                }
+              ]
+            }
+          },
+          "UsersTable": {
+            "Type": "AWS::DynamoDB::Table",
+            "Properties": {
+              "TableName": "sunset-digital-marketplace-users-dev",
+              "BillingMode": "PAY_PER_REQUEST",
+              "AttributeDefinitions": [
+                {
+                  "AttributeName": "id",
+                  "AttributeType": "S"
+                }
+              ],
+              "KeySchema": [
+                {
+                  "AttributeName": "id",
+                  "KeyType": "HASH"
+                }
+              ]
+            }
+          },
+          "OrdersTable": {
+            "Type": "AWS::DynamoDB::Table",
+            "Properties": {
+              "TableName": "sunset-digital-marketplace-orders-dev",
+              "BillingMode": "PAY_PER_REQUEST",
+              "AttributeDefinitions": [
+                {
+                  "AttributeName": "id",
+                  "AttributeType": "S"
+                },
+                {
+                  "AttributeName": "userId",
+                  "AttributeType": "S"
+                }
+              ],
+              "KeySchema": [
+                {
+                  "AttributeName": "id",
+                  "KeyType": "HASH"
+                }
+              ],
+              "GlobalSecondaryIndexes": [
+                {
+                  "IndexName": "userIdIndex",
+                  "KeySchema": [
+                    {
+                      "AttributeName": "userId",
+                      "KeyType": "HASH"
+                    }
+                  ],
+                  "Projection": {
+                    "ProjectionType": "ALL"
+                  }
+                }
+              ]
+            }
+          },
+          "ProductBucket": {
+            "Type": "AWS::S3::Bucket",
+            "Properties": {
+              "BucketName": "sunset-digital-marketplace-products-dev",
+              "CorsConfiguration": {
+                "CorsRules": [
+                  {
+                    "AllowedHeaders": [
+                      "*"
+                    ],
+                    "AllowedMethods": [
+                      "GET",
+                      "PUT",
+                      "POST",
+                      "DELETE"
+                    ],
+                    "AllowedOrigins": [
+                      "*"
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          "UserPool": {
+            "Type": "AWS::Cognito::UserPool",
+            "Properties": {
+              "UserPoolName": "sunset-digital-marketplace-user-pool-dev",
+              "AutoVerifiedAttributes": [
+                "email"
+              ],
+              "UsernameAttributes": [
+                "email"
+              ]
+            }
+          },
+          "UserPoolClient": {
+            "Type": "AWS::Cognito::UserPoolClient",
+            "Properties": {
+              "ClientName": "sunset-digital-marketplace-user-pool-client-dev",
+              "UserPoolId": {
+                "Ref": "UserPool"
+              },
+              "ExplicitAuthFlows": [
+                "ALLOW_USER_SRP_AUTH",
+                "ALLOW_REFRESH_TOKEN_AUTH"
+              ],
+              "GenerateSecret": "<REDACTED>"
+            }
+          },
+          "BuyersGroup": {
+            "Type": "AWS::Cognito::UserPoolGroup",
+            "Properties": {
+              "GroupName": "buyers",
+              "UserPoolId": {
+                "Ref": "UserPool"
+              }
+            }
+          },
+          "SellersGroup": {
+            "Type": "AWS::Cognito::UserPoolGroup",
+            "Properties": {
+              "GroupName": "sellers",
+              "UserPoolId": {
+                "Ref": "UserPool"
+              }
+            }
+          }
+        },
+        "Outputs": {
+          "ProductsTableName": {
+            "Value": {
+              "Ref": "ProductsTable"
+            }
+          },
+          "UsersTableName": {
+            "Value": {
+              "Ref": "UsersTable"
+            }
+          },
+          "OrdersTableName": {
+            "Value": {
+              "Ref": "OrdersTable"
+            }
+          },
+          "ProductBucketName": {
+            "Value": {
+              "Ref": "ProductBucket"
+            }
+          },
+          "UserPoolId": {
+            "Value": {
+              "Ref": "UserPool"
+            }
+          },
+          "UserPoolClientId": {
+            "Value": {
+              "Ref": "UserPoolClient"
+            }
+          }
+        }
+      }
+    },
+    "provider": {
+      "name": "aws",
+      "runtime": "nodejs18.x",
+      "region": "us-east-1",
+      "environment": {
+        "PRODUCTS_TABLE": "sunset-digital-marketplace-products-dev",
+        "USERS_TABLE": "sunset-digital-marketplace-users-dev",
+        "ORDERS_TABLE": "sunset-digital-marketplace-orders-dev",
+        "PRODUCT_BUCKET": "sunset-digital-marketplace-products-dev"
+      },
+      "iamRoleStatements": [
+        {
+          "Effect": "Allow",
+          "Action": [
+            "dynamodb:Query",
+            "dynamodb:Scan",
+            "dynamodb:GetItem",
+            "dynamodb:PutItem",
+            "dynamodb:UpdateItem",
+            "dynamodb:DeleteItem"
+          ],
+          "Resource": [
+            {
+              "Fn::GetAtt": [
+                "ProductsTable",
+                "Arn"
+              ]
+            },
+            {
+              "Fn::GetAtt": [
+                "UsersTable",
+                "Arn"
+              ]
+            },
+            {
+              "Fn::GetAtt": [
+                "OrdersTable",
+                "Arn"
+              ]
+            }
+          ]
+        },
+        {
+          "Effect": "Allow",
+          "Action": [
+            "s3:PutObject",
+            "s3:GetObject",
+            "s3:DeleteObject"
+          ],
+          "Resource": {
+            "Fn::Join": [
+              "",
+              [
+                {
+                  "Fn::GetAtt": [
+                    "ProductBucket",
+                    "Arn"
+                  ]
+                },
+                "/*"
+              ]
+            ]
+          }
+        }
+      ],
+      "stage": "dev",
+      "versionFunctions": true
+    },
+    "dashboard": {
+      "isEnabledForService": false,
+      "requiredAuthentication": false,
+      "orgFeaturesInUse": null,
+      "orgObservabilityIntegrations": null,
+      "serviceAppId": null,
+      "serviceProvider": null,
+      "instanceParameters": null
+    },
+    "serviceRawFile": "service: sunset-digital-marketplace\n\nframeworkVersion: '4'\n\nplugins:\n  - serverless-offline\n\nprovider:\n  name: aws\n  runtime: nodejs18.x\n  region: us-east-1\n  environment:\n    PRODUCTS_TABLE: ${self:service}-products-${sls:stage}\n    USERS_TABLE: ${self:service}-users-${sls:stage}\n    ORDERS_TABLE: ${self:service}-orders-${sls:stage}\n    PRODUCT_BUCKET: ${self:service}-products-${sls:stage}\n  iamRoleStatements:\n    - Effect: Allow\n      Action:\n        - dynamodb:Query\n        - dynamodb:Scan\n        - dynamodb:GetItem\n        - dynamodb:PutItem\n        - dynamodb:UpdateItem\n        - dynamodb:DeleteItem\n      Resource: \n        - !GetAtt ProductsTable.Arn\n        - !GetAtt UsersTable.Arn\n        - !GetAtt OrdersTable.Arn\n    - Effect: Allow\n      Action:\n        - s3:PutObject\n        - s3:GetObject\n        - s3:DeleteObject\n      Resource: !Join ['', [!GetAtt ProductBucket.Arn, '/*']]\n\nfunctions:\n  # Authentication functions\n  createUser:\n    handler: src/auth/createUser.handler\n    events:\n      - http:\n          path: /users\n          method: post\n          cors: true\n  \n  # Product functions\n  listProducts:\n    handler: src/products/listProducts.handler\n    events:\n      - http:\n          path: /products\n          method: get\n          cors: true\n  \n  getProduct:\n    handler: src/products/getProduct.handler\n    events:\n      - http:\n          path: /products/{id}\n          method: get\n          cors: true\n  \n  createProduct:\n    handler: src/products/createProduct.handler\n    events:\n      - http:\n          path: /products\n          method: post\n          cors: true\n          authorizer: aws_iam\n  \n  # Order functions\n  createOrder:\n    handler: src/orders/createOrder.handler\n    events:\n      - http:\n          path: /orders\n          method: post\n          cors: true\n          authorizer: aws_iam\n  \n  getOrders:\n    handler: src/orders/getOrders.handler\n    events:\n      - http:\n          path: /orders\n          method: get\n          cors: true\n          authorizer: aws_iam\n\nresources:\n  Resources:\n    # DynamoDB Tables\n    ProductsTable:\n      Type: AWS::DynamoDB::Table\n      Properties:\n        TableName: ${self:provider.environment.PRODUCTS_TABLE}\n        BillingMode: PAY_PER_REQUEST\n        AttributeDefinitions:\n          - AttributeName: id\n            AttributeType: S\n        KeySchema:\n          - AttributeName: id\n            KeyType: HASH\n    \n    UsersTable:\n      Type: AWS::DynamoDB::Table\n      Properties:\n        TableName: ${self:provider.environment.USERS_TABLE}\n        BillingMode: PAY_PER_REQUEST\n        AttributeDefinitions:\n          - AttributeName: id\n            AttributeType: S\n        KeySchema:\n          - AttributeName: id\n            KeyType: HASH\n    \n    OrdersTable:\n      Type: AWS::DynamoDB::Table\n      Properties:\n        TableName: ${self:provider.environment.ORDERS_TABLE}\n        BillingMode: PAY_PER_REQUEST\n        AttributeDefinitions:\n          - AttributeName: id\n            AttributeType: S\n          - AttributeName: userId\n            AttributeType: S\n        KeySchema:\n          - AttributeName: id\n            KeyType: HASH\n        GlobalSecondaryIndexes:\n          - IndexName: userIdIndex\n            KeySchema:\n              - AttributeName: userId\n                KeyType: HASH\n            Projection:\n              ProjectionType: ALL\n    \n    # S3 Bucket for product files\n    ProductBucket:\n      Type: AWS::S3::Bucket\n      Properties:\n        BucketName: ${self:provider.environment.PRODUCT_BUCKET}\n        CorsConfiguration:\n          CorsRules:\n            - AllowedHeaders:\n                - '*'\n              AllowedMethods:\n                - GET\n                - PUT\n                - POST\n                - DELETE\n              AllowedOrigins:\n                - '*'\n    \n    # Cognito User Pool\n    UserPool:\n      Type: AWS::Cognito::UserPool\n      Properties:\n        UserPoolName: ${self:service}-user-pool-${sls:stage}\n        AutoVerifiedAttributes:\n          - email\n        UsernameAttributes:\n          - email\n    \n    UserPoolClient:\n      Type: AWS::Cognito::UserPoolClient\n      Properties:\n        ClientName: ${self:service}-user-pool-client-${sls:stage}\n        UserPoolId: !Ref UserPool\n        ExplicitAuthFlows:\n          - ALLOW_USER_SRP_AUTH\n          - ALLOW_REFRESH_TOKEN_AUTH\n        GenerateSecret: false\n\n    # User Pool Groups for Buyers and Sellers\n    BuyersGroup:\n      Type: AWS::Cognito::UserPoolGroup\n      Properties:\n        GroupName: buyers\n        UserPoolId: !Ref UserPool\n    \n    SellersGroup:\n      Type: AWS::Cognito::UserPoolGroup\n      Properties:\n        GroupName: sellers\n        UserPoolId: !Ref UserPool\n\n  Outputs:\n    ProductsTableName:\n      Value: !Ref ProductsTable\n    UsersTableName:\n      Value: !Ref UsersTable\n    OrdersTableName:\n      Value: !Ref OrdersTable\n    ProductBucketName:\n      Value: !Ref ProductBucket\n    UserPoolId:\n      Value: !Ref UserPool\n    UserPoolClientId:\n      Value: !Ref UserPoolClient\n",
+    "command": [
+      "deploy",
+      "list",
+      "functions"
+    ],
+    "options": {},
+    "orgId": "fef7fd46-9627-48a9-8cfa-8d64c3cb68b5",
+    "orgName": "ukemzyskywalker",
+    "userId": "W5kLHJgzwf26Q3jgfd",
+    "userName": "ukemzyskywalker",
+    "serviceProviderAwsAccountId": "910883278292",
+    "serviceProviderAwsCfStackName": "sunset-digital-marketplace-dev",
+    "serviceProviderAwsCfStackId": "arn:aws:cloudformation:us-east-1:910883278292:stack/sunset-digital-marketplace-dev/aabe11e0-4734-11f0-bec3-0afff2eeb7e3",
+    "serviceProviderAwsCfStackCreated": "2025-06-12T02:26:37.869Z",
+    "serviceProviderAwsCfStackUpdated": null,
+    "serviceProviderAwsCfStackStatus": "CREATE_COMPLETE",
+    "serviceProviderAwsCfStackOutputs": [
+      {
+        "OutputKey": "CreateOrderLambdaFunctionQualifiedArn",
+        "OutputValue": "arn:aws:lambda:us-east-1:910883278292:function:sunset-digital-marketplace-dev-createOrder:1",
+        "Description": "Current Lambda function version",
+        "ExportName": "sls-sunset-digital-marketplace-dev-CreateOrderLambdaFunctionQualifiedArn"
+      },
+      {
+        "OutputKey": "UsersTableName",
+        "OutputValue": "sunset-digital-marketplace-users-dev"
+      },
+      {
+        "OutputKey": "OrdersTableName",
+        "OutputValue": "sunset-digital-marketplace-orders-dev"
+      },
+      {
+        "OutputKey": "ListProductsLambdaFunctionQualifiedArn",
+        "OutputValue": "arn:aws:lambda:us-east-1:910883278292:function:sunset-digital-marketplace-dev-listProducts:1",
+        "Description": "Current Lambda function version",
+        "ExportName": "sls-sunset-digital-marketplace-dev-ListProductsLambdaFunctionQualifiedArn"
+      },
+      {
+        "OutputKey": "GetOrdersLambdaFunctionQualifiedArn",
+        "OutputValue": "arn:aws:lambda:us-east-1:910883278292:function:sunset-digital-marketplace-dev-getOrders:1",
+        "Description": "Current Lambda function version",
+        "ExportName": "sls-sunset-digital-marketplace-dev-GetOrdersLambdaFunctionQualifiedArn"
+      },
+      {
+        "OutputKey": "CreateProductLambdaFunctionQualifiedArn",
+        "OutputValue": "arn:aws:lambda:us-east-1:910883278292:function:sunset-digital-marketplace-dev-createProduct:1",
+        "Description": "Current Lambda function version",
+        "ExportName": "sls-sunset-digital-marketplace-dev-CreateProductLambdaFunctionQualifiedArn"
+      },
+      {
+        "OutputKey": "ServerlessDeploymentBucketName",
+        "OutputValue": "serverless-framework-deployments-us-east-1-58781ef0-93f5",
+        "ExportName": "sls-sunset-digital-marketplace-dev-ServerlessDeploymentBucketName"
+      },
+      {
+        "OutputKey": "GetProductLambdaFunctionQualifiedArn",
+        "OutputValue": "arn:aws:lambda:us-east-1:910883278292:function:sunset-digital-marketplace-dev-getProduct:1",
+        "Description": "Current Lambda function version",
+        "ExportName": "sls-sunset-digital-marketplace-dev-GetProductLambdaFunctionQualifiedArn"
+      },
+      {
+        "OutputKey": "ProductBucketName",
+        "OutputValue": "sunset-digital-marketplace-products-dev"
+      },
+      {
+        "OutputKey": "UserPoolClientId",
+        "OutputValue": "2ab476u53eqa0s4rjvjbe5tg4u"
+      },
+      {
+        "OutputKey": "UserPoolId",
+        "OutputValue": "us-east-1_8MESl0WO2"
+      },
+      {
+        "OutputKey": "ProductsTableName",
+        "OutputValue": "sunset-digital-marketplace-products-dev"
+      },
+      {
+        "OutputKey": "CreateUserLambdaFunctionQualifiedArn",
+        "OutputValue": "arn:aws:lambda:us-east-1:910883278292:function:sunset-digital-marketplace-dev-createUser:1",
+        "Description": "Current Lambda function version",
+        "ExportName": "sls-sunset-digital-marketplace-dev-CreateUserLambdaFunctionQualifiedArn"
+      },
+      {
+        "OutputKey": "ServiceEndpoint",
+        "OutputValue": "https://azezx58tmg.execute-api.us-east-1.amazonaws.com/dev",
+        "Description": "URL of the service endpoint",
+        "ExportName": "sls-sunset-digital-marketplace-dev-ServiceEndpoint"
+      }
+    ]
+  }
+}

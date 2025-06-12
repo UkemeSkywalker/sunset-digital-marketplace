@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Amplify } from 'aws-amplify';
 import { AuthProvider } from './context/AuthContext';
 import Header from './components/Header';
+import Footer from './components/Footer';
 
 // Pages
 import Home from './pages/Home';
@@ -36,9 +37,9 @@ function App() {
   return (
     <AuthProvider>
       <Router>
-        <div className="min-h-screen bg-gray-50">
+        <div className="flex flex-col min-h-screen bg-gray-50">
           <Header />
-          <main className="container mx-auto px-4 py-8">
+          <main className="flex-grow">
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/products" element={<Products />} />
@@ -49,11 +50,7 @@ function App() {
               <Route path="/dashboard" element={<SellerDashboard />} />
             </Routes>
           </main>
-          <footer className="bg-gray-800 text-white py-6">
-            <div className="container mx-auto px-4 text-center">
-              <p>&copy; {new Date().getFullYear()} Sunset Digital Marketplace</p>
-            </div>
-          </footer>
+          <Footer />
         </div>
       </Router>
     </AuthProvider>
