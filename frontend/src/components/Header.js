@@ -56,6 +56,12 @@ const Header = () => {
                       Signed in as<br />
                       <span className="font-medium">{user?.email || 'User'}</span>
                     </div>
+                    <Link 
+                      to="/profile"
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      My Profile
+                    </Link>
                     <button 
                       onClick={signOut}
                       className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -110,6 +116,13 @@ const Header = () => {
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Creator Dashboard
+                </Link>
+                <Link 
+                  to="/profile" 
+                  className="block py-2 hover:bg-primary-500 px-2 rounded"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  My Profile
                 </Link>
                 <button 
                   onClick={() => {

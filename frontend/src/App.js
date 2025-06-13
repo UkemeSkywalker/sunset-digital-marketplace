@@ -14,6 +14,7 @@ import Register from './pages/Register';
 import Orders from './pages/Orders';
 import CreatorDashboard from './pages/CreatorDashboard';
 import UploadProduct from './pages/UploadProduct';
+import Profile from './pages/Profile';
 
 // Configure Amplify
 const awsConfig = {
@@ -57,6 +58,7 @@ function App() {
               <Route path="/orders" element={<Orders />} />
               <Route path="/dashboard" element={<CreatorDashboard />} />
               <Route path="/upload-product" element={<UploadProduct />} />
+              <Route path="/profile" element={<Profile />} />
             </Routes>
           </main>
           <Footer />

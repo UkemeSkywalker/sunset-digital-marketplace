@@ -60,6 +60,41 @@ functions:
               - X-Amz-Security-Token
               - X-Amz-User-Agent
             allowCredentials: true
+            
+  # User profile functions
+  getUser:
+    handler: src/users/getUser.handler
+    events:
+      - http:
+          path: /users/{id}
+          method: get
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
+            
+  updateUser:
+    handler: src/users/updateUser.handler
+    events:
+      - http:
+          path: /users/{id}
+          method: put
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
   
   # Product functions
   listProducts:
