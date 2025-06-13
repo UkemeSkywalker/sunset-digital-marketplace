@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { API } from 'aws-amplify';
-import { useAuth } from '../context/AuthContext';
+// import { useAuth } from '../context/AuthContext';
 import sampleProducts from '../data/sampleProducts';
 
 const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  // const { isAuthenticated } = useAuth();
   
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -55,29 +55,58 @@ const ProductDetail = () => {
     fetchProduct();
   }, [fetchProduct]);
 
-  const handlePurchase = async () => {
-    if (!isAuthenticated) {
-      navigate('/login', { state: { from: `/products/${id}` } });
-      return;
-    }
-
+  const handleDownload = async () => {
     try {
       setPurchasing(true);
       
-      // Simulate API call for sample data
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // For sample products
+      if (product.id.startsWith('prod-')) {
+        // Simulate API call for sample data
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        setPurchasing(false);
+        setPurchaseSuccess(true);
+        
+        // Show success message
+        setTimeout(() => {
+          setPurchaseSuccess(false);
+        }, 3000);
+        
+        alert('This is a sample product. In a real app, you would download the actual file.');
+        return;
+      }
+      
+      // Get download URL from backend
+      const response = await API.get('api', `/products/${product.id}/download`);
       
       setPurchasing(false);
-      setPurchaseSuccess(true);
       
-      // Navigate to orders page after 2 seconds
-      setTimeout(() => {
-        navigate('/orders', { state: { success: true } });
-      }, 2000);
+      if (response && response.downloadUrl) {
+        // Create a temporary link and trigger download
+        const link = document.createElement('a');
+        link.href = response.downloadUrl;
+        link.setAttribute('download', product.name);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        setPurchaseSuccess(true);
+        
+        // Hide success message after 3 seconds
+        setTimeout(() => {
+          setPurchaseSuccess(false);
+        }, 3000);
+      } else {
+        console.error('Download URL not available');
+        setError('Unable to download this product. Please try again later.');
+      }
     } catch (err) {
-      console.error('Error purchasing product:', err);
+      console.error('Error downloading product:', err);
       setPurchasing(false);
-      setError('Failed to complete purchase. Please try again.');
+      if (err.response && err.response.status === 404) {
+        setError('This product has no downloadable file attached.');
+      } else {
+        setError('Failed to download product. Please try again.');
+      }
     }
   };
 
@@ -225,7 +254,7 @@ const ProductDetail = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                   </svg>
                   <p className="text-green-700">
-                    Purchase successful! Redirecting to your orders...
+                    Download started successfully!
                   </p>
                 </div>
               </div>
@@ -243,7 +272,7 @@ const ProductDetail = () => {
                 )}
                 
                 <button
-                  onClick={handlePurchase}
+                  onClick={handleDownload}
                   disabled={purchasing}
                   className={`w-full btn ${purchasing ? 'bg-gray-400 cursor-not-allowed' : 'btn-primary'}`}
                 >
@@ -253,26 +282,26 @@ const ProductDetail = () => {
                       Processing...
                     </div>
                   ) : (
-                    'Purchase Now'
+                    <div className="flex items-center justify-center">
+                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" 
+                          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                      Download Now
+                    </div>
                   )}
                 </button>
-                
-                {!isAuthenticated && (
-                  <p className="text-sm text-gray-500 mt-2 text-center">
-                    You'll need to sign in to complete your purchase
-                  </p>
-                )}
               </>
             )}
             
             <div className="mt-8 pt-6 border-t border-gray-200">
-              <h3 className="text-sm font-medium text-gray-500 mb-2">Secure Purchase</h3>
+              <h3 className="text-sm font-medium text-gray-500 mb-2">Free Download</h3>
               <div className="flex items-center text-gray-400 text-sm">
                 <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" 
-                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                 </svg>
-                Secure transaction
+                Instant download
               </div>
             </div>
           </div>
