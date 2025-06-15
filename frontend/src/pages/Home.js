@@ -46,28 +46,47 @@ const Home = () => {
   return (
     <div className="flex flex-col items-center">
       {/* Hero Section */}
-      <div className="w-full py-16 bg-gradient-to-r from-sunset-orange to-sunset-yellow text-white text-center">
-        <div className="max-w-4xl mx-auto px-4">
-          <h1 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">
-            Discover Amazing Digital Products
+      <div className="w-full py-24 bg-white flex items-center justify-center">
+        <div className="max-w-4xl mx-auto px-4 text-center">
+          <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight text-gray-900 font-sans">
+            The Top 1% of Creators Share Here
           </h1>
-          <p className="text-xl mb-8 text-primary-100 max-w-2xl mx-auto">
-            Your one-stop marketplace for high-quality digital products from creators around the world
-          </p>
+          <h3 className="text-xl md:text-2xl mb-10 text-gray-600 max-w-2xl mx-auto font-sans">
+            Download Stunning Assets. Fuel Your Next Big Project.
+          </h3>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link 
               to="/products" 
-              className="btn btn-secondary text-lg px-8 py-3"
+              className="px-8 py-3 bg-sunset-orange text-white text-lg rounded-md hover:bg-sunset-dark transition-colors"
             >
               Browse Products
             </Link>
             <Link 
               to={isAuthenticated ? "/upload-product" : "/register"} 
-              className="btn btn-outline text-lg px-8 py-3"
+              className="px-8 py-3 border-2 border-sunset-orange text-sunset-orange text-lg rounded-md hover:bg-sunset-orange hover:text-white transition-colors"
             >
               {isAuthenticated ? "Upload Product" : "Start Creating"}
             </Link>
           </div>
+        </div>
+      </div>
+      
+      {/* Categories */}
+      <div className="max-w-6xl mx-auto py-10 px-4">
+        <h2 className="text-2xl font-bold text-center mb-6">
+          <span className="gradient-text">Explore Categories</span>
+        </h2>
+        
+        <div className="flex flex-wrap justify-center gap-3">
+          {categories.map((category, index) => (
+            <Link 
+              key={index}
+              to="/products" 
+              className="px-6 py-2 border border-sunset-orange text-sunset-orange hover:bg-sunset-orange hover:text-white transition-colors rounded-[3em]"
+            >
+              {category.name}
+            </Link>
+          ))}
         </div>
       </div>
       
@@ -99,33 +118,7 @@ const Home = () => {
         </div>
       </div>
       
-      {/* Categories */}
-      <div className="max-w-6xl mx-auto py-16 px-4">
-        <h2 className="text-3xl font-bold text-center mb-12">
-          <span className="gradient-text">Explore Categories</span>
-        </h2>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          {categories.map((category, index) => (
-            <div 
-              key={index}
-              className="card card-hover text-center p-6 flex flex-col items-center"
-            >
-              <div className="w-16 h-16 mb-4 flex items-center justify-center rounded-full bg-primary-100 text-primary-600">
-                {category.icon}
-              </div>
-              <h3 className="text-xl font-semibold mb-2">{category.name}</h3>
-              <p className="text-gray-600 mb-4 text-sm">{category.description}</p>
-              <Link 
-                to="/products" 
-                className="text-primary-600 font-medium hover:text-primary-700 mt-auto"
-              >
-                Browse {category.name}
-              </Link>
-            </div>
-          ))}
-        </div>
-      </div>
+
       
       {/* How It Works */}
       <div className="w-full bg-gray-50 py-16">
@@ -214,42 +207,14 @@ const Home = () => {
 
 // Sample data
 const categories = [
-  {
-    name: "Digital Art",
-    description: "Illustrations, graphics, and artwork for your projects",
-    icon: (
-      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-      </svg>
-    )
-  },
-  {
-    name: "Templates",
-    description: "Website, presentation, and document templates",
-    icon: (
-      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
-      </svg>
-    )
-  },
-  {
-    name: "E-books",
-    description: "Educational guides, tutorials, and books",
-    icon: (
-      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-      </svg>
-    )
-  },
-  {
-    name: "Software",
-    description: "Apps, plugins, and digital tools",
-    icon: (
-      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-      </svg>
-    )
-  }
+  { name: "Digital Art" },
+  { name: "Templates" },
+  { name: "E-books" },
+  { name: "Software" },
+  { name: "Graphics" },
+  { name: "Audio" },
+  { name: "Video" },
+  { name: "Photography" }
 ];
 
 const steps = [
