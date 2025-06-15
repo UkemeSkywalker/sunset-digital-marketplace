@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { API, Storage } from 'aws-amplify';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
+import ProfilePictureUploader from '../components/ProfilePictureUploader';
 
 const Profile = () => {
   const { user } = useAuth();
@@ -138,6 +139,13 @@ const Profile = () => {
         return;
       }
       
+      // Check file type
+      const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+      if (!validTypes.includes(file.type)) {
+        setError('Please upload a valid image file (JPEG, PNG, GIF, or WEBP).');
+        return;
+      }
+      
       // Create preview
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -149,6 +157,11 @@ const Profile = () => {
         ...profile,
         profilePictureFile: file
       });
+      
+      // If not in edit mode, enter edit mode
+      if (!isEditing) {
+        setIsEditing(true);
+      }
     }
   };
 
@@ -237,7 +250,7 @@ const Profile = () => {
             {!isEditing && (
               <button
                 onClick={() => setIsEditing(true)}
-                className="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700"
+                className="bg-sunset-orange text-white px-4 py-2 rounded-md hover:bg-sunset-dark transition-colors"
               >
                 Edit Profile
               </button>
@@ -260,48 +273,11 @@ const Profile = () => {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="flex flex-col md:flex-row gap-8">
                 <div className="md:w-1/3">
-                  <div className="mb-4">
-                    <label className="block text-gray-700 mb-2">Profile Picture</label>
-                    <div className="flex flex-col items-center">
-                      <div className="w-40 h-40 rounded-full overflow-hidden bg-gray-200 mb-4">
-                        {imagePreview ? (
-                          <img 
-                            src={imagePreview} 
-                            alt="Profile" 
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-gray-400">
-                            <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" 
-                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                            </svg>
-                          </div>
-                        )}
-                      </div>
-                      
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleFileChange}
-                        className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
-                      />
-                      
-                      {uploadProgress > 0 && (
-                        <div className="w-full mt-2">
-                          <div className="text-xs font-medium text-gray-500 mb-1">
-                            Uploading: {uploadProgress}%
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-1.5">
-                            <div 
-                              className="bg-primary-600 h-1.5 rounded-full" 
-                              style={{ width: `${uploadProgress}%` }}
-                            ></div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                  <ProfilePictureUploader 
+                    imagePreview={imagePreview}
+                    onFileChange={handleFileChange}
+                    uploadProgress={uploadProgress}
+                  />
                 </div>
                 
                 <div className="md:w-2/3">
@@ -488,7 +464,7 @@ const Profile = () => {
                 </button>
                 <button
                   type="submit"
-                  className="bg-primary-600 text-white px-6 py-2 rounded-md hover:bg-primary-700 disabled:bg-gray-400"
+                  className="bg-sunset-orange text-white px-6 py-2 rounded-md hover:bg-sunset-dark transition-colors disabled:bg-gray-400"
                   disabled={saving}
                 >
                   {saving ? 'Saving...' : 'Save Changes'}
@@ -498,7 +474,10 @@ const Profile = () => {
           ) : (
             <div className="flex flex-col md:flex-row gap-8">
               <div className="md:w-1/3 flex flex-col items-center">
-                <div className="w-40 h-40 rounded-full overflow-hidden bg-gray-200 mb-4">
+                <div 
+                  className="w-40 h-40 rounded-full overflow-hidden bg-gray-200 mb-4 relative group cursor-pointer"
+                  onClick={() => setIsEditing(true)}
+                >
                   {imagePreview ? (
                     <img 
                       src={imagePreview} 
@@ -513,6 +492,11 @@ const Profile = () => {
                       </svg>
                     </div>
                   )}
+                  <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                  </div>
                 </div>
                 <h2 className="text-xl font-semibold">
                   {profile.firstName && profile.lastName 

@@ -7,10 +7,10 @@ const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <header className="bg-gradient-to-r from-primary-600 to-secondary-600 text-white shadow-lg sticky top-0 z-50">
+    <header className="bg-white text-gray-800 shadow-sm sticky top-0 z-50">
       <div className="container mx-auto px-4 py-4">
         <div className="flex justify-between items-center">
-          <Link to="/" className="text-2xl font-bold flex items-center">
+          <Link to="/" className="text-2xl font-bold flex items-center text-sunset-orange">
             <span className="mr-2">🌅</span>
             <span className="hidden sm:inline">Sunset Marketplace</span>
             <span className="sm:hidden">Sunset</span>
@@ -32,20 +32,20 @@ const Header = () => {
           
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-6">
-            <Link to="/products" className="hover:text-primary-100 transition-colors">
+            <Link to="/products" className="text-sunset-orange hover:text-sunset-dark transition-colors">
               Products
             </Link>
             
             {isAuthenticated ? (
               <>
-                <Link to="/orders" className="hover:text-primary-100 transition-colors">
+                <Link to="/orders" className="text-sunset-orange hover:text-sunset-dark transition-colors">
                   My Orders
                 </Link>
-                <Link to="/dashboard" className="hover:text-primary-100 transition-colors">
+                <Link to="/dashboard" className="text-sunset-orange hover:text-sunset-dark transition-colors">
                   Creator Dashboard
                 </Link>
                 <div className="relative group">
-                  <button className="flex items-center hover:text-primary-100">
+                  <button className="flex items-center text-sunset-orange hover:text-sunset-dark">
                     <span className="mr-1">Account</span>
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
@@ -75,13 +75,13 @@ const Header = () => {
               <>
                 <Link 
                   to="/login" 
-                  className="btn btn-secondary"
+                  className="px-4 py-2 bg-sunset-orange text-white rounded-md hover:bg-sunset-dark transition-colors"
                 >
                   Sign In
                 </Link>
                 <Link 
                   to="/register" 
-                  className="btn btn-outline"
+                  className="px-4 py-2 border border-sunset-orange text-sunset-orange rounded-md hover:bg-sunset-orange hover:text-white transition-colors"
                 >
                   Register
                 </Link>
