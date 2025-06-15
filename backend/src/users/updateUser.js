@@ -8,7 +8,8 @@ module.exports.handler = async (event) => {
     const { 
       firstName, 
       lastName, 
-      email, 
+      email,
+      username,
       organization, 
       country, 
       website, 
@@ -23,11 +24,12 @@ module.exports.handler = async (event) => {
     const params = {
       TableName: process.env.USERS_TABLE,
       Key: { id: userId },
-      UpdateExpression: 'set firstName = :firstName, lastName = :lastName, email = :email, organization = :organization, country = :country, website = :website, socialMedia = :socialMedia, bio = :bio, profilePicture = :profilePicture, updatedAt = :updatedAt',
+      UpdateExpression: 'set firstName = :firstName, lastName = :lastName, email = :email, username = :username, organization = :organization, country = :country, website = :website, socialMedia = :socialMedia, bio = :bio, profilePicture = :profilePicture, updatedAt = :updatedAt',
       ExpressionAttributeValues: {
         ':firstName': firstName,
         ':lastName': lastName,
         ':email': email,
+        ':username': username,
         ':organization': organization,
         ':country': country,
         ':website': website,

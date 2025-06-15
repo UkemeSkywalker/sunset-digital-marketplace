@@ -10,6 +10,7 @@ const Profile = () => {
     firstName: '',
     lastName: '',
     email: user?.email || '',
+    username: user?.email ? user.email.split('@')[0] : '',
     organization: '',
     country: '',
     website: '',
@@ -37,22 +38,25 @@ const Profile = () => {
       // Try to fetch from API
       try {
         const response = await API.get('api', `/users/${user.sub}`);
-        if (response) {
-          // Get product count
-          let productCount = 0;
-          try {
-            const productsResponse = await API.get('api', '/products');
-            if (Array.isArray(productsResponse)) {
-              productCount = productsResponse.filter(p => p.sellerId === user.sub).length;
-            }
-          } catch (err) {
-            console.log('Error fetching product count:', err);
+        
+        // Get product count
+        let productCount = 0;
+        try {
+          const productsResponse = await API.get('api', '/products');
+          if (Array.isArray(productsResponse)) {
+            productCount = productsResponse.filter(p => p.sellerId === user.sub).length;
           }
-          
+        } catch (err) {
+          console.log('Error fetching product count:', err);
+        }
+        
+        if (response) {
+          // User exists in database, use their data
           setProfile({
             firstName: response.firstName || '',
             lastName: response.lastName || '',
             email: user?.email || '',
+            username: response.username || (user?.email ? user.email.split('@')[0] : ''),
             organization: response.organization || '',
             country: response.country || '',
             website: response.website || '',
@@ -70,7 +74,28 @@ const Profile = () => {
           if (response.profilePicture) {
             const imageUrl = `https://${process.env.REACT_APP_S3_BUCKET}.s3.us-east-1.amazonaws.com/public/${response.profilePicture.replace(/^public\//, '')}`;
             setImagePreview(imageUrl);
+          } else {
+            setImagePreview(null);
           }
+        } else {
+          // User doesn't exist in database yet, use default data
+          setProfile({
+            firstName: '',
+            lastName: '',
+            email: user?.email || '',
+            organization: '',
+            country: '',
+            website: '',
+            socialMedia: {
+              twitter: '',
+              instagram: '',
+              linkedin: ''
+            },
+            bio: '',
+            profilePicture: null,
+            productCount: 0
+          });
+          setImagePreview(null);
         }
       } catch (apiError) {
         console.log('Using default profile data', apiError);
@@ -79,6 +104,7 @@ const Profile = () => {
           firstName: '',
           lastName: '',
           email: user?.email || '',
+          username: user?.email ? user.email.split('@')[0] : '',
           organization: '',
           country: '',
           website: '',
@@ -91,6 +117,7 @@ const Profile = () => {
           profilePicture: null,
           productCount: 0
         });
+        setImagePreview(null);
       }
       
       setLoading(false);
@@ -101,10 +128,28 @@ const Profile = () => {
     }
   }, [user]);
   
-  // Fetch user profile on component mount
+  // Create or fetch user profile on component mount
   useEffect(() => {
     if (user) {
-      fetchUserProfile();
+      // First create the user if they don't exist
+      const createUserIfNeeded = async () => {
+        try {
+          await API.post('api', '/users', {
+            body: {
+              id: user.sub,
+              email: user.email
+            }
+          });
+          // Then fetch the user profile
+          fetchUserProfile();
+        } catch (err) {
+          console.error('Error creating user:', err);
+          // Still try to fetch profile even if creation fails
+          fetchUserProfile();
+        }
+      };
+      
+      createUserIfNeeded();
     }
   }, [user, fetchUserProfile]);
 
@@ -199,6 +244,7 @@ const Profile = () => {
         firstName: profile.firstName,
         lastName: profile.lastName,
         email: profile.email,
+        username: profile.username,
         organization: profile.organization,
         country: profile.country,
         website: profile.website,
@@ -277,6 +323,13 @@ const Profile = () => {
                     imagePreview={imagePreview}
                     onFileChange={handleFileChange}
                     uploadProgress={uploadProgress}
+                    onCancel={() => {
+                      setIsEditing(false);
+                      setError(null);
+                      setImagePreview(profile.profilePicture ? 
+                        `https://${process.env.REACT_APP_S3_BUCKET}.s3.us-east-1.amazonaws.com/public/${profile.profilePicture.replace(/^public\//, '')}` : 
+                        null);
+                    }}
                   />
                 </div>
                 
@@ -306,6 +359,19 @@ const Profile = () => {
                         required
                       />
                     </div>
+                  </div>
+                  
+                  <div className="mb-4">
+                    <label className="block text-gray-700 mb-2">Username *</label>
+                    <input
+                      type="text"
+                      name="username"
+                      value={profile.username}
+                      onChange={handleChange}
+                      className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sunset-orange"
+                      placeholder="Username"
+                      required
+                    />
                   </div>
                   
                   <div className="mb-4">
@@ -501,9 +567,10 @@ const Profile = () => {
                 <h2 className="text-xl font-semibold">
                   {profile.firstName && profile.lastName 
                     ? `${profile.firstName} ${profile.lastName}` 
-                    : user?.email?.split('@')[0] || 'User'}
+                    : profile.username || 'User'}
                 </h2>
-                <p className="text-gray-500">{user?.email || ''}</p>
+                <p className="text-gray-500">@{profile.username}</p>
+                <p className="text-gray-500 text-sm">{user?.email || ''}</p>
               </div>
               
               <div className="md:w-2/3">
@@ -511,6 +578,10 @@ const Profile = () => {
                   <div>
                     <h3 className="text-lg font-semibold mb-2">Contact Information</h3>
                     <div className="space-y-2">
+                      <div>
+                        <span className="text-gray-500">Username:</span>
+                        <p className="text-gray-700">@{profile.username}</p>
+                      </div>
                       <div>
                         <span className="text-gray-500">Email:</span>
                         <p className="text-gray-700">{profile.email}</p>

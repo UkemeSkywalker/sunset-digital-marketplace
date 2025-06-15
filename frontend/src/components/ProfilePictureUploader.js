@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 
-const ProfilePictureUploader = ({ imagePreview, onFileChange, uploadProgress }) => {
+const ProfilePictureUploader = ({ imagePreview, onFileChange, uploadProgress, onCancel }) => {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
   
@@ -87,13 +87,25 @@ const ProfilePictureUploader = ({ imagePreview, onFileChange, uploadProgress }) 
           className="hidden"
         />
         
-        <button
-          type="button"
-          onClick={handleClick}
-          className="px-4 py-2 text-sm bg-white border border-sunset-orange text-sunset-orange rounded-md hover:bg-sunset-orange hover:text-white transition-colors"
-        >
-          Choose Image
-        </button>
+        <div className="flex space-x-2">
+          <button
+            type="button"
+            onClick={handleClick}
+            className="px-4 py-2 text-sm bg-white border border-sunset-orange text-sunset-orange rounded-md hover:bg-sunset-orange hover:text-white transition-colors"
+          >
+            Choose Image
+          </button>
+          
+          {onCancel && (
+            <button
+              type="button"
+              onClick={onCancel}
+              className="px-4 py-2 text-sm bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-100 transition-colors"
+            >
+              Cancel
+            </button>
+          )}
+        </div>
         
         {uploadProgress > 0 && (
           <div className="w-full mt-4">

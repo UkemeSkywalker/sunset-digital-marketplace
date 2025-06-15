@@ -1,27 +1,70 @@
 const AWS = require('aws-sdk');
-const { v4: uuidv4 } = require('uuid');
 const dynamodb = new AWS.DynamoDB.DocumentClient();
 
 module.exports.handler = async (event) => {
   try {
     const data = JSON.parse(event.body);
-    const { email, name } = data;
+    const { id, email } = data;
     
-    const userId = uuidv4();
+    if (!id) {
+      return {
+        statusCode: 400,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Credentials': true
+        },
+        body: JSON.stringify({ message: 'User ID is required' })
+      };
+    }
+    
     const timestamp = new Date().toISOString();
     
+    // Check if user already exists
+    const getParams = {
+      TableName: process.env.USERS_TABLE,
+      Key: { id }
+    };
+    
+    const existingUser = await dynamodb.get(getParams).promise();
+    
+    if (existingUser.Item) {
+      return {
+        statusCode: 200,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Credentials': true
+        },
+        body: JSON.stringify(existingUser.Item)
+      };
+    }
+    
+    // Create new user
     const user = {
-      id: userId,
+      id,
       email,
-      name,
+      username: email.split('@')[0], // Default username from email
+      firstName: '',
+      lastName: '',
+      organization: '',
+      country: '',
+      website: '',
+      socialMedia: {
+        twitter: '',
+        instagram: '',
+        linkedin: ''
+      },
+      bio: '',
+      profilePicture: null,
       createdAt: timestamp,
       updatedAt: timestamp
     };
     
-    await dynamodb.put({
+    const params = {
       TableName: process.env.USERS_TABLE,
       Item: user
-    }).promise();
+    };
+    
+    await dynamodb.put(params).promise();
     
     return {
       statusCode: 201,
@@ -34,12 +77,12 @@ module.exports.handler = async (event) => {
   } catch (error) {
     console.log('Error creating user:', error);
     return {
-      statusCode: 500,
+      statusCode: error.statusCode || 500,
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Credentials': true
       },
-      body: JSON.stringify({ message: 'Could not create user' })
+      body: JSON.stringify({ message: 'Could not create user', error: error.message })
     };
   }
 };
