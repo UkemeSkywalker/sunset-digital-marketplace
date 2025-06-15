@@ -134,10 +134,14 @@ const Profile = () => {
       // First create the user if they don't exist
       const createUserIfNeeded = async () => {
         try {
+          // Generate a unique timestamp to ensure unique profile data
+          const timestamp = new Date().toISOString();
+          
           await API.post('api', '/users', {
             body: {
               id: user.sub,
-              email: user.email
+              email: user.email,
+              timestamp: timestamp // Add timestamp to ensure uniqueness
             }
           });
           // Then fetch the user profile
@@ -191,6 +195,9 @@ const Profile = () => {
         return;
       }
       
+      // Generate a unique filename with user ID to ensure uniqueness
+      const uniqueFilename = `${user.sub}-${Date.now()}-${file.name.replace(/\s+/g, '-')}`;
+      
       // Create preview
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -198,15 +205,12 @@ const Profile = () => {
       };
       reader.readAsDataURL(file);
       
+      // Store the file with the unique filename
       setProfile({
         ...profile,
-        profilePictureFile: file
+        profilePictureFile: file,
+        profilePictureFileName: uniqueFilename // Store the unique filename
       });
-      
-      // If not in edit mode, enter edit mode
-      if (!isEditing) {
-        setIsEditing(true);
-      }
     }
   };
 
@@ -221,7 +225,9 @@ const Profile = () => {
       
       // Upload new profile picture if provided
       if (profile.profilePictureFile) {
-        const fileName = `profile-pictures/${user.sub}-${Date.now()}-${profile.profilePictureFile.name.replace(/\\s+/g, '-')}`;
+        // Use the unique filename we generated earlier, or generate a new one if it doesn't exist
+        const fileName = profile.profilePictureFileName || 
+          `profile-pictures/${user.sub}-${Date.now()}-${profile.profilePictureFile.name.replace(/\\s+/g, '-')}`;
         
         await Storage.put(
           fileName,
@@ -541,8 +547,7 @@ const Profile = () => {
             <div className="flex flex-col md:flex-row gap-8">
               <div className="md:w-1/3 flex flex-col items-center">
                 <div 
-                  className="w-40 h-40 rounded-full overflow-hidden bg-gray-200 mb-4 relative group cursor-pointer"
-                  onClick={() => setIsEditing(true)}
+                  className="w-40 h-40 rounded-full overflow-hidden bg-gray-200 mb-4 relative group"
                 >
                   {imagePreview ? (
                     <img 
@@ -558,11 +563,7 @@ const Profile = () => {
                       </svg>
                     </div>
                   )}
-                  <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                    </svg>
-                  </div>
+
                 </div>
                 <h2 className="text-xl font-semibold">
                   {profile.firstName && profile.lastName 
