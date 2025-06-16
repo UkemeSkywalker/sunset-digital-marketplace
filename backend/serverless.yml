@@ -4,6 +4,10 @@ frameworkVersion: '4'
 
 plugins:
   - serverless-offline
+  
+custom:
+  timestamp: ${env:TIMESTAMP, ''}
+  userPoolName: ${self:service}-user-pool-${sls:stage}${self:custom.timestamp}
 
 provider:
   name: aws
@@ -44,6 +48,32 @@ provider:
 
 functions:
   # Authentication functions
+  postConfirmation:
+    handler: src/auth/postConfirmation.handler
+    environment:
+      USERS_TABLE: ${self:provider.environment.USERS_TABLE}
+    events:
+      - cognitoUserPool:
+          pool: ${self:custom.userPoolName}
+          trigger: PostConfirmation
+          existing: true
+          
+  fixUserTable:
+    handler: src/users/fixUserTable.handler
+    events:
+      - http:
+          path: /admin/fix-users
+          method: post
+          cors: true
+          
+  deleteAllData:
+    handler: src/admin/deleteAllData.handler
+    events:
+      - http:
+          path: /admin/delete-all-data
+          method: post
+          cors: true
+          
   createUser:
     handler: src/auth/createUser.handler
     events:
@@ -63,7 +93,7 @@ functions:
             
   # User profile functions
   getUser:
-    handler: src/users/getUser.handler
+    handler: src/users/getUserById.handler
     events:
       - http:
           path: /users/{id}
@@ -80,7 +110,7 @@ functions:
             allowCredentials: true
             
   updateUser:
-    handler: src/users/updateUser.handler
+    handler: src/users/updateUserById.handler
     events:
       - http:
           path: /users/{id}
@@ -321,7 +351,7 @@ resources:
       UserPool:
         Type: AWS::Cognito::UserPool
         Properties:
-          UserPoolName: ${self:service}-user-pool-${sls:stage}
+          UserPoolName: ${self:custom.userPoolName}
           AutoVerifiedAttributes:
             - email
           UsernameAttributes:
@@ -330,7 +360,7 @@ resources:
       UserPoolClient:
         Type: AWS::Cognito::UserPoolClient
         Properties:
-          ClientName: ${self:service}-user-pool-client-${sls:stage}
+          ClientName: ${self:service}-user-pool-client-${sls:stage}${self:custom.timestamp}
           UserPoolId: !Ref UserPool
           ExplicitAuthFlows:
             - ALLOW_USER_SRP_AUTH

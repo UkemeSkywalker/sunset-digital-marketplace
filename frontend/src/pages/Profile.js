@@ -128,32 +128,10 @@ const Profile = () => {
     }
   }, [user]);
   
-  // Create or fetch user profile on component mount
+  // Fetch user profile on component mount
   useEffect(() => {
     if (user) {
-      // First create the user if they don't exist
-      const createUserIfNeeded = async () => {
-        try {
-          // Generate a unique timestamp to ensure unique profile data
-          const timestamp = new Date().toISOString();
-          
-          await API.post('api', '/users', {
-            body: {
-              id: user.sub,
-              email: user.email,
-              timestamp: timestamp // Add timestamp to ensure uniqueness
-            }
-          });
-          // Then fetch the user profile
-          fetchUserProfile();
-        } catch (err) {
-          console.error('Error creating user:', err);
-          // Still try to fetch profile even if creation fails
-          fetchUserProfile();
-        }
-      };
-      
-      createUserIfNeeded();
+      fetchUserProfile();
     }
   }, [user, fetchUserProfile]);
 
